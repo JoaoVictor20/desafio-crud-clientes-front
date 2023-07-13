@@ -28,7 +28,7 @@ const ClientCRUD = () => {
   const [razaoSocial, setRazaoSocial] = useState('');
   const [nomeFantasia, setNomeFantasia] = useState('');
   const [idUsuario, setIdUsuario] = useState('');
-  const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJkZXNhZmlvIiwic3ViIjoiSk9BTyIsImV4cCI6MTY4OTI4NjM2MX0.etlILXjnwjYePO-kPSTlG9zzic8X9D4UmVe3Wut6Jow';
+  const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJkZXNhZmlvIiwic3ViIjoiSk9BTyIsImV4cCI6MTY4OTI5MTcyNn0.Uo49SnvUqaT8ShqcT0sLAWWoadRfVreSWQTiJaUJgrk';
 
   useEffect(() => {
     getClients();
@@ -36,13 +36,12 @@ const ClientCRUD = () => {
 
   const getClients = async () => {
     try {
-      const response = await fetch('http://localhost:8080/cliente/buscar-clientes', {
-        method: 'POST',
+      const response = await fetch('http://localhost:8080/cliente/buscar-clientes/1', {
+        method: 'GET',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ idUsuario: 1 }),
       });
 
       if (response.ok) {
@@ -117,13 +116,12 @@ const ClientCRUD = () => {
 
   const deleteClient = async (id: number) => {
     try {
-      await fetch(`http://localhost:8080/cliente/deletar-cliente`, {
+      await fetch(`http://localhost:8080/cliente/deletar-cliente/${id}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(id),
       });
 
       getClients();
@@ -147,108 +145,138 @@ const ClientCRUD = () => {
 
   return (
     <div className="container">
-  <h1>Clientes</h1>
+      <h1>Clientes</h1>
 
-  <form onSubmit={createClient} className="form">
-    <div className="form-group">
-      <label htmlFor="nome">Nome:</label>
-      <input
-        type="text"
-        id="nome"
-        placeholder="Digite o nome"
-        value={nome}
-        onChange={(e) => setNome(e.target.value)}
-      />
-    </div>
+      <form onSubmit={createClient} className="form">
+        <table>
+          <tbody>
+            <tr>
+              <td>
+                <label htmlFor="nome">Nome:</label>
+              </td>
+              <td>
+                <input
+                  type="text"
+                  id="nome"
+                  placeholder="Digite o nome"
+                  value={nome}
+                  onChange={(e) => setNome(e.target.value)}
+                />
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <label htmlFor="telefone">Telefone:</label>
+              </td>
+              <td>
+                <input
+                  type="text"
+                  id="telefone"
+                  placeholder="Digite o telefone"
+                  value={telefone}
+                  onChange={(e) => setTelefone(e.target.value)}
+                />
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <label htmlFor="cpf">CPF:</label>
+              </td>
+              <td>
+                <input
+                  type="text"
+                  id="cpf"
+                  placeholder="Digite o CPF"
+                  value={cpf}
+                  onChange={(e) => setCpf(e.target.value)}
+                />
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <label htmlFor="dataNascimento">Data de Nascimento:</label>
+              </td>
+              <td>
+                <input
+                  type="text"
+                  id="dataNascimento"
+                  placeholder="Digite a data de nascimento"
+                  value={dataDeNascimento}
+                  onChange={(e) => setDataDeNascimento(e.target.value)}
+                />
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <label htmlFor="cnpj">CNPJ:</label>
+              </td>
+              <td>
+                <input
+                  type="text"
+                  id="cnpj"
+                  placeholder="Digite o CNPJ"
+                  value={cnpj}
+                  onChange={(e) => setCnpj(e.target.value)}
+                />
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <label htmlFor="razaoSocial">Razão Social:</label>
+              </td>
+              <td>
+                <input
+                  type="text"
+                  id="razaoSocial"
+                  placeholder="Digite a razão social"
+                  value={razaoSocial}
+                  onChange={(e) => setRazaoSocial(e.target.value)}
+                />
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <label htmlFor="nomeFantasia">Nome Fantasia:</label>
+              </td>
+              <td>
+                <input
+                  type="text"
+                  id="nomeFantasia"
+                  placeholder="Digite o nome fantasia"
+                  value={nomeFantasia}
+                  onChange={(e) => setNomeFantasia(e.target.value)}
+                />
+              </td>
+            </tr>
+          </tbody>
+        </table>
 
-    <div className="form-group">
-      <label htmlFor="telefone">Telefone:</label>
-      <input
-        type="text"
-        id="telefone"
-        placeholder="Digite o telefone"
-        value={telefone}
-        onChange={(e) => setTelefone(e.target.value)}
-      />
-    </div>
+        <button type="submit" className="btn">Adicionar</button>
+      </form>
 
-    <div className="form-group">
-      <label htmlFor="cpf">CPF:</label>
-      <input
-        type="text"
-        id="cpf"
-        placeholder="Digite o CPF"
-        value={cpf}
-        onChange={(e) => setCpf(e.target.value)}
-      />
-    </div>
+      {
+        loading ? (
+          <p>Carregando...</p>
+        ) : error ? (
+          <p className="error">Erro: {error}</p>
+        ) : (
+          <ul className="client-list">
+            {clients.map((client) => (
+              <li key={client.id} className="client-item">
+                <div className="grid-container">
+                  <span className="client-id grid-item">{client.id}</span>
+                  <span className="client-name grid-item">{client.nome}</span>
+                  <span className="client-cpf grid-item">({client.cpf})</span>
+                  <button onClick={() => updateClient(client)} className="btn grid-item">Editar</button>
+                  <button onClick={() => deleteClient(client.id!)} className="btn grid-item">Excluir</button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )
+      }
 
-    <div className="form-group">
-      <label htmlFor="dataNascimento">Data de Nascimento:</label>
-      <input
-        type="text"
-        id="dataNascimento"
-        placeholder="Digite a data de nascimento"
-        value={dataDeNascimento}
-        onChange={(e) => setDataDeNascimento(e.target.value)}
-      />
-    </div>
-
-    <div className="form-group">
-      <label htmlFor="cnpj">CNPJ:</label>
-      <input
-        type="text"
-        id="cnpj"
-        placeholder="Digite o CNPJ"
-        value={cnpj}
-        onChange={(e) => setCnpj(e.target.value)}
-      />
-    </div>
-
-    <div className="form-group">
-      <label htmlFor="razaoSocial">Razão Social:</label>
-      <input
-        type="text"
-        id="razaoSocial"
-        placeholder="Digite a razão social"
-        value={razaoSocial}
-        onChange={(e) => setRazaoSocial(e.target.value)}
-      />
-    </div>
-
-    <div className="form-group">
-      <label htmlFor="nomeFantasia">Nome Fantasia:</label>
-      <input
-        type="text"
-        id="nomeFantasia"
-        placeholder="Digite o nome fantasia"
-        value={nomeFantasia}
-        onChange={(e) => setNomeFantasia(e.target.value)}
-      />
-    </div>
-
-    <button type="submit" className="btn">Adicionar</button>
-  </form>
-
-  {loading ? (
-    <p>Carregando...</p>
-  ) : error ? (
-    <p className="error">Erro: {error}</p>
-  ) : (
-    <ul className="client-list">
-      {clients.map((client) => (
-        <li key={client.id} className="client-item">
-          <span className="client-id">{client.id}</span>
-          <span className="client-name">{client.nome}</span>
-          <span className="client-cpf">({client.cpf})</span>
-          <button onClick={() => updateClient(client)} className="btn">Editar</button>
-          <button onClick={() => deleteClient(client.id!)} className="btn">Excluir</button>
-        </li>
-      ))}
-    </ul>
-  )}
-
-  <style jsx>{`
+      <style jsx>{`
     .container {
       display: flex;
       flex-direction: column;
@@ -326,7 +354,7 @@ const ClientCRUD = () => {
       font-style: italic;
     }
   `}</style>
-</div>
+    </div>
 
   );
 };
