@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import Cookies from 'js-cookie';
 
@@ -12,12 +13,14 @@ interface Client {
   cnpj: string | null;
   razaoSocial: string | null;
   nomeFantasia: string | null;
-  idUsuario: number | null
+  idUsuario: number | null;
+  dataCadastro: string | null;
 }
 
 const ClientCRUD = () => {
-  const [clients, setClients] = useState<Client[]>([]);
-  const [loading, setLoading] = useState(true);
+
+  const router = useRouter();
+  const [clientes, setClients] = useState<Client[]>([]);
   const [error, setError] = useState('');
   const [id, setId] = useState('');
   const [nome, setNome] = useState('');
@@ -27,16 +30,22 @@ const ClientCRUD = () => {
   const [cnpj, setCnpj] = useState('');
   const [razaoSocial, setRazaoSocial] = useState('');
   const [nomeFantasia, setNomeFantasia] = useState('');
-  const [idUsuario, setIdUsuario] = useState('');
-  const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJkZXNhZmlvIiwic3ViIjoiSk9BTyIsImV4cCI6MTY4OTI5MTcyNn0.Uo49SnvUqaT8ShqcT0sLAWWoadRfVreSWQTiJaUJgrk';
+  const [dataCadastro, setDataCadastro] = useState('');
+
+  var idUsuarioInteiro = 0;
+  const idUsuarioCookie = Cookies.get("idUsuario");
+  if (idUsuarioCookie !== undefined) {
+    idUsuarioInteiro = parseInt(idUsuarioCookie);
+  }
+  var token = Cookies.get('token');
 
   useEffect(() => {
-    getClients();
+    buscarClientes();
   }, []);
 
-  const getClients = async () => {
+  const buscarClientes = async () => {
     try {
-      const response = await fetch('http://localhost:8080/cliente/buscar-clientes/1', {
+      const response = await fetch('http://localhost:8080/cliente/buscar-clientes/' + idUsuarioInteiro, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -46,24 +55,20 @@ const ClientCRUD = () => {
 
       if (response.ok) {
         const data = await response.json();
-        setClients(data);
-        setLoading(false);
         setError('');
-      } else if (response.status === 403) {
-        setError('Usuário ou senha inválidos');
-        setLoading(false);
-      } else {
-        setError('Erro ao obter os clientes');
-        setLoading(false);
+        setClients(data);
+      }
+      else if (response.status === 403) {
+        idUsuarioInteiro = 0;
+        token = '';
+        router.push('/login')
       }
     } catch (error) {
-      console.error('Erro ao obter os clientes:', error);
-      setError('Erro ao obter os clientes');
-      setLoading(false);
+      setError('Erro ao listar clientes. Verifique se a API está funcionando corretamente.');
     }
   };
 
-  const createClient = async (e: React.FormEvent) => {
+  const salvarCliente = async (e: React.FormEvent) => {
     e.preventDefault();
 
     try {
@@ -76,10 +81,11 @@ const ClientCRUD = () => {
         cnpj,
         razaoSocial,
         nomeFantasia,
-        idUsuario: 1,
+        idUsuario: idUsuarioInteiro,
+        dataCadastro: null,
       };
 
-      await fetch('http://localhost:8080/cliente/cadastrar-cliente', {
+      const response = await fetch('http://localhost:8080/cliente/cadastrar-cliente', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -88,35 +94,68 @@ const ClientCRUD = () => {
         body: JSON.stringify(newClient),
       });
 
-      resetForm();
-      getClients();
+      if (response.ok) {
+        limparFormulario();
+        buscarClientes();
+      }
+      else if (response.status === 500) {
+        setError('Erro ao cadastrar cliente. Verifique se todos os campos obrigatórios estão preenchidos corretamente.');
+      }
+      else if (response.status === 403) {
+        idUsuarioInteiro = 0;
+        token = '';
+        router.push('/login')
+      }
     } catch (error) {
-      console.error('Erro ao criar o cliente:', error);
-      setError('Erro ao criar o cliente');
+      setError('Erro desconhecido, verifique se a API está funcionando corretamente.');
     }
   };
 
-  const updateClient = async (updatedClient: Client) => {
+  const atualizarCliente = async (id: number) => {
+
+    const newClient: Client = {
+      id: id,
+      nome,
+      telefone,
+      cpf,
+      dataDeNascimento,
+      cnpj,
+      razaoSocial,
+      nomeFantasia,
+      idUsuario: idUsuarioInteiro,
+      dataCadastro: null,
+    };
+
     try {
-      await fetch(`http://localhost:8080/cliente/alterar-cliente`, {
+      const response = await fetch(`http://localhost:8080/cliente/alterar-cliente`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(updatedClient),
+        body: JSON.stringify(newClient),
       });
 
-      getClients();
+      if (response.ok) {
+        limparFormulario();
+        buscarClientes();
+      }
+      else if (response.status === 500) {
+        setError('Erro ao atualizar cliente. Verifique se todos os campos obrigatórios estão preenchidos corretamente.');
+      }
+      else if (response.status === 403) {
+        idUsuarioInteiro = 0;
+        token = '';
+        router.push('/login')
+      }
     } catch (error) {
-      console.error('Erro ao atualizar o cliente:', error);
-      setError('Erro ao atualizar o cliente');
+      setError('Erro desconhecido, verifique se a API está funcionando corretamente.');
     }
   };
 
-  const deleteClient = async (id: number) => {
+  const deletarCliente = async (id: number) => {
     try {
-      await fetch(`http://localhost:8080/cliente/deletar-cliente/${id}`, {
+      const response = await fetch(`http://localhost:8080/cliente/deletar-cliente/${id}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -124,14 +163,23 @@ const ClientCRUD = () => {
         },
       });
 
-      getClients();
+      if (response.ok) {
+        buscarClientes();
+      }
+      else if (response.status === 500) {
+        setError('Erro ao deletar cliente.');
+      }
+      else if (response.status === 403) {
+        idUsuarioInteiro = 0;
+        token = '';
+        router.push('/login')
+      }
     } catch (error) {
-      console.error('Erro ao deletar o cliente:', error);
-      setError('Erro ao deletar o cliente');
+      setError('Erro desconhecido, verifique se a API está funcionando corretamente.');
     }
   };
 
-  const resetForm = () => {
+  const limparFormulario = () => {
     setId('');
     setNome('');
     setTelefone('');
@@ -140,14 +188,13 @@ const ClientCRUD = () => {
     setCnpj('');
     setRazaoSocial('');
     setNomeFantasia('');
-    setIdUsuario('');
+    setDataCadastro('');
   };
 
   return (
     <div className="container">
       <h1>Clientes</h1>
-
-      <form onSubmit={createClient} className="form">
+      <form onSubmit={salvarCliente} className="form">
         <table>
           <tbody>
             <tr>
@@ -250,25 +297,42 @@ const ClientCRUD = () => {
             </tr>
           </tbody>
         </table>
-
         <button type="submit" className="btn">Adicionar</button>
+        <span className="error">{error}</span>
       </form>
 
       {
-        loading ? (
-          <p>Carregando...</p>
-        ) : error ? (
-          <p className="error">Erro: {error}</p>
-        ) : (
+        (
           <ul className="client-list">
-            {clients.map((client) => (
+            {clientes.map((client) => (
               <li key={client.id} className="client-item">
                 <div className="grid-container">
-                  <span className="client-id grid-item">{client.id}</span>
-                  <span className="client-name grid-item">{client.nome}</span>
-                  <span className="client-cpf grid-item">({client.cpf})</span>
-                  <button onClick={() => updateClient(client)} className="btn grid-item">Editar</button>
-                  <button onClick={() => deleteClient(client.id!)} className="btn grid-item">Excluir</button>
+
+                  <span className="client-id grid-item">ID:</span>
+                  <span className="description">{client.id}</span>
+                  <br></br>
+
+                  <span className="client-id grid-item"> Data Cadastro:</span>
+                  <span className="description">{client.dataCadastro}</span>
+                  <br></br>
+
+                  <span className="client-id grid-item"> Nome/Razão Social: </span>
+                  <span className="description">{client.nome}</span>
+                  <span className="description">{client.razaoSocial} </span>
+                  <br></br>
+
+                  <span className="client-id grid-item"> Cpf/Cnpj:</span>
+                  <span className="description">{client.cpf}</span>
+                  <span className="description">{client.cnpj}</span>
+                  <br></br>
+
+                  <span className="client-id grid-item"> Telefone:</span>
+                  <span className="description">{client.telefone}</span>
+                  <br></br>
+
+                  <button onClick={() => atualizarCliente(client.id!)} className="btn grid-item">Editar</button>
+                  <span className="description"> </span>
+                  <button onClick={() => deletarCliente(client.id!)} className="btn error">Excluir</button>
                 </div>
               </li>
             ))}

@@ -37,10 +37,6 @@ const Login = () => {
         setToken('');
         setIdUsuario('');
         setError('Usuário ou senha inválidos');
-      } else {
-        setToken('');
-        setIdUsuario('');
-        setError('Erro desconhecido ao realizar login');
       }
     } catch (error) {
       setToken('');
